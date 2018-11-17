@@ -1,0 +1,226 @@
+---
+title: "Data607_Project3"
+date: "October 1, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#install packages
+```{r }
+#install.packages("RSQLite")
+#install.packages('tidyverse')
+#install.packages('dplyr')
+```
+
+#load library 
+```{r}
+library(RSQLite)
+library(tidyverse)
+library(dplyr)
+```
+
+#Create SQLite DB
+```{r}
+# Create an ephemeral in-memory RSQLite database
+con <- dbConnect(RSQLite::SQLite(), ":memory:" ,overwrite =TRUE )
+dbListTables(con)
+```
+#load data from csv files 
+```{r}
+df <-  read.csv(file = "kaggle-survey-2017/multipleChoiceResponses.csv", header= TRUE)
+df_freeResponse <- read.csv (file = "kaggle-survey-2017/freeformResponses.csv", header= TRUE)
+df_CRate<- read.csv (file = "kaggle-survey-2017/conversionRates.csv", header= TRUE)
+df_schema <- read.csv (file = "kaggle-survey-2017/schema.csv", header= TRUE)
+
+```
+#Add Sequence ID to the dataset
+```{r}
+# add sequence to the dataframe 
+df<- tibble::rowid_to_column(df, "ID")
+```
+## Select columns for the project 
+# columns ID refer to the "multipleChoiceResponses_columnsID.xlsx" file 
+
+```{r}
+target_col <- c ("ID",  "GenderSelect" ,"Country", "Age"  ,"EmploymentStatus"                  ,"StudentStatus"                     ,"LanguageRecommendationSelect"  ,    "JobSkillImportanceBigData"   ,"JobSkillImportanceDegree" ,         "JobSkillImportanceStats" ,"JobSkillImportanceEnterpriseTools", "JobSkillImportancePython"  ,"JobSkillImportanceR"  ,             "JobSkillImportanceSQL"     ,"JobSkillImportanceKaggleRanking" ,  "JobSkillImportanceMOOC"  ,"JobSkillImportanceVisualizations")
+
+df_target <- df[,target_col]
+
+```
+#clean up columns
+#show unique value in jobimportanceXXX columns
+```{r}
+table(df_target$JobSkillImportanceDegree)
+df_target %>% select (starts_with("Jobs")) %>% str()
+
+table(df_target$JobSkillImportanceBigData)
+```
+
+
+#clean JobskillImportanceXXX columns
+
+```{r}
+
+JobImportance <- function(skill)
+{  skill<- as.character(skill)
+     if (skill=='Necessary')
+     {
+       return (2)
+       
+     }
+    else if (skill=="Nice to have")
+    {
+      return (1)
+    }
+  else if (skill=="Unnecessary")
+{
+    return (-1)
+  
+  
+}
+  else 
+  {
+    return (0)
+  }
+}
+
+df_target$JobSkillImportanceBigData <- sapply(df_target$JobSkillImportanceBigData, JobImportance)
+df_target$JobSkillImportanceDegree <- sapply(df_target$JobSkillImportanceDegree, JobImportance)
+df_target$JobSkillImportanceStats <- sapply(df_target$JobSkillImportanceStats, JobImportance)
+df_target$JobSkillImportanceEnterpriseTools <- sapply(df_target$JobSkillImportanceEnterpriseTools, JobImportance)
+df_target$JobSkillImportancePython <- sapply(df_target$JobSkillImportancePython, JobImportance)
+df_target$JobSkillImportanceR <- sapply(df_target$JobSkillImportanceR, JobImportance)
+df_target$JobSkillImportanceSQL <- sapply(df_target$JobSkillImportanceSQL, JobImportance)
+df_target$JobSkillImportanceKaggleRanking <- sapply(df_target$JobSkillImportanceKaggleRanking, JobImportance)
+df_target$JobSkillImportanceMOOC <- sapply(df_target$JobSkillImportanceMOOC, JobImportance)
+df_target$JobSkillImportanceVisualizations <- sapply(df_target$JobSkillImportanceVisualizations, JobImportance)
+
+
+```
+
+#show the result after clean up 
+```{r}
+df_target %>% select (starts_with("Jobs")) %>% str()
+```
+
+#clean GenderSelect columns
+
+```{r}
+table(df_target$GenderSelect )
+
+
+GenderClean <- function(gender)
+{  skill<- as.character(gender)
+     if (gender=='Female')
+     {
+       return ('F')
+       
+     }
+    else if (gender=="Male")
+    {
+      return ("M")
+    }
+  
+  else 
+  {
+    
+    return ("NA")
+  }
+  
+}
+df_target$GenderSelect <- sapply(df_target$GenderSelect, GenderClean)
+df_target$GenderSelect <- sapply(df_target$GenderSelect, factor)
+table(df_target$GenderSelect )
+```
+
+```{r}
+str(df_target)
+```
+
+
+#clean up EmploymentStatus
+```{r}
+table (df_target$EmploymentStatus )
+
+EmployeeClean <- function(emp)
+{  emp<- as.character(emp)
+     if (emp=='Independent contractor, freelancer, or self-employed')
+     {
+       return ('Self-employed')
+       
+     }
+    else if (emp=="Not employed, and not looking for work"|emp=="Not employed, but looking for work")
+    {
+      return ("Unemployed")
+    }
+  else if (emp=="I prefer not to say")
+    {
+      return ("NA")
+  }
+else if (emp=="Employed full-time")
+    {
+      return ("Full_Time")
+}
+else if (emp=="Employed part-time")
+    {
+      return ("Part_Time")
+    }
+  else 
+  {
+    
+    return (emp)
+  }
+  
+}
+df_target$EmploymentStatus <- sapply(df_target$EmploymentStatus, EmployeeClean)
+df_target$EmploymentStatus <- sapply(df_target$EmploymentStatus, factor)
+table(df_target$EmploymentStatus )
+```
+
+
+
+```{r}
+str(df_target)
+```
+
+
+#visulationzation
+
+```{r}
+df_jobimportance <-  df_target %>% 
+  select (starts_with("Jobs")) 
+names(df_jobimportance) <- sub ("JobSkillImportance" , "", names(df_jobimportance))
+#colSums()
+par(las=2) # make label text perpendicular to axis
+par(mar=c(5,8,4,2)) # increase y-axis margin.
+barplot(colSums(df_jobimportance), horiz=TRUE)
+```
+
+
+
+
+
+```{r}
+dbWriteTable(con,  "MCR_Target_Analysis_Tab", df_target)
+dbWriteTable(con,  "MCR_FreeResponse", df_freeResponse)
+dbWriteTable(con,  "MCR_Schema", df_schema)
+dbWriteTable(con,  "MCR_CurrencyRate", df_CRate)
+dbWriteTable(con,  "MCR_multipleChoiceResponses", df )
+dbListTables(con)
+
+```
+#Show available columns 
+
+```{r}
+dbListFields(con, "MCR_Target_Analysis_Tab")
+```
+
+#close DB conncetion
+
+```{r}
+ dbDisconnect(con)
+```
+

@@ -1,0 +1,109 @@
+---
+title: "Week2_Assignment"
+output: html_document
+---
+
+
+## R Markdown
+
+#load movie dataset(csv files ) to R 
+```{r}
+movie= read.csv('movies.csv', header = TRUE)
+head(movie,5)
+```
+
+
+
+```{r}
+ratings= read.csv('ratings.csv', header = TRUE)
+ratings$ratingtime = as.POSIXct(ratings$timestamp, origin="1970-01-01", tz="UTC")
+
+```
+
+
+```{r}
+head(ratings)
+```
+
+
+ # load RMySQL package
+```{r}
+library(RMySQL)
+```
+
+
+# Load Login info from configuration file 
+```{r}
+rmysqlsql.settingfile <- 'H:\\Learning\\MySQL_Configuration_file.cnf'
+rmysql.db ="Movies"
+```
+
+# Build connection to local MySQL server ( Version 5.7)
+
+```{r}
+conn <- dbConnect(MySQL(),  default.file= rmysqlsql.settingfile, group = rmysql.db)
+
+```
+
+#check avialble tables (new schema no tables avialble in the schema)
+```{r}
+dbListTables(conn)
+```
+
+
+## load movies into movies schema 
+```{r}
+dbWriteTable(conn, value = movie, row.names = FALSE, name = "movies", append = TRUE ) 
+```
+
+
+#load ratings into movies schema 
+```{r}
+dbWriteTable(conn, value = ratings, row.names = FALSE, name = "ratings", append = TRUE ) 
+```
+
+#check the avavilable table 
+
+```{r}
+dbListTables(conn)
+```
+
+# read sample data from movies table 
+
+```{r}
+movie_query <- "SELECT * FROM movies.movies where title like ('%2016%') order by movieid desc
+limit 10
+; "
+movie_result = dbGetQuery(conn, movie_query )
+movie_result
+```
+
+#read sample data from ratings table 
+
+```{r}
+ratings_query <- "SELECT * FROM movies.ratings where rating >=4.0 order by ratingtime desc
+limit 10
+; "
+ratings_result = dbGetQuery(conn, ratings_query )
+ratings_result
+```
+
+
+#Get the average rating of the movies in 2016
+
+```{r}
+movie_Avg_rating_qry =  "SELECT r.movieid, title, AVG(COALESCE(r.rating,0)) AS Averge_rating
+FROM movies.ratings r 
+INNER JOIN movies.movies m ON r.movieid = m.movieid 
+WHERE m.title LIKE'%2016%' 
+GROUP BY r.movieid, title
+"
+movie_Avg_rating_result = dbGetQuery(conn, movie_Avg_rating_qry)
+
+```
+#list the movies with average rating >4.5
+```{r}
+subset(movie_Avg_rating_result,Averge_rating>=4.5)
+```
+
+

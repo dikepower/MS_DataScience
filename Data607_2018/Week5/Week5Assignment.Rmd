@@ -1,0 +1,97 @@
+---
+title: "Week5Assignments"
+ 
+date: "September 27, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+```
+
+##  Load Data
+```{r}
+
+flights<-  read.csv("flight.csv", stringsAsFactors = FALSE, check.names = FALSE)
+flights
+```
+```{r}
+head(flights,2)
+```
+
+
+# Add column names
+```{r}
+col <- c('Airline','Status','Los Angeles','Phoenix','San Diego', 'San Francisco', 'Seattle')
+colnames(flights)<-col
+
+```
+
+
+#drop na rows
+
+```{r}
+row.toberemoved <- which (flights$Status=="")
+df <- flights[-row.toberemoved,]
+df
+```
+
+#fill in the missing value
+```{r}
+df[2,1]='ALASKA'
+df[4,1]='AM WEST'
+df
+```
+
+ #clean up with tidyr
+```{r}
+df2 <- df %>% 
+  gather(City, freq, 3:length(flights)) %>%   # Transfer 'city' variable into a column
+  spread(Status, freq)%>% rename ( on.time ='on time')
+
+df2
+```
+
+
+#df
+
+```{r}
+df2
+```
+
+
+#Data Analysis
+# getting the ratio of delayed flights for all airlines and cities.
+
+```{r}
+df2 <- df2 %>% 
+  mutate(Total_flights = delayed +on.time, delayed_ratio = delayed / Total_flights) %>% 
+  arrange(desc(delayed_ratio))
+
+df2
+```
+
+#plot the relationship between total flights and delayed ratio
+#load library
+```{r}
+library(ggplot2)
+
+```
+
+#load library
+
+```{r}
+p1 <- ggplot(df2, aes(x= Total_flights, y= delayed_ratio, colour='red'))
+print (p1+geom_point())
+```
+It seems that there is no liner relation ship between total number of fights and the ratio of air line delay events. 
+
+ 

@@ -1,0 +1,85 @@
+---
+title: "Data607_Project3"
+date: "October 1, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#install packages
+```{r }
+#install.packages("RSQLite")
+#install.packages('tidyverse')
+#install.packages('dplyr')
+```
+
+#load library 
+```{r}
+library(RSQLite)
+library(tidyverse)
+library(dplyr)
+```
+
+#Create SQLite DB
+```{r}
+# Create an ephemeral in-memory RSQLite database
+con <- dbConnect(RSQLite::SQLite(), "ML_Survey.sqlite" ,overwrite =TRUE )
+dbListTables(con)
+```
+#load data from csv files 
+```{r}
+df <-  read.csv(file = "H:/Learning/MS_DataScience/607_DataAcquisition_And_Management/Project3/kaggle-survey-2017/multipleChoiceResponses.csv", header= TRUE)
+
+```
+#Add Sequence ID to the dataset
+```{r}
+
+# add sequence to the dataframe 
+df<- tibble::rowid_to_column(df, "ID")
+```
+## Select columns for the project 
+#do we need to add columns  135:164 and 83:130??
+# columns ID refer to the "multipleChoiceResponses_columnsID.xlsx" file 
+```{r}
+col_index <- c(1:15, 38:47,70:82,134,168:172,208:211)
+df2 <- df[,col_index]
+```
+
+
+#load data into SQLlite
+
+```{r}
+dbWriteTable(con,  "MCR_Tb", df2)
+dbListTables(con)
+
+```
+#Show available columns 
+
+```{r}
+dbListFields(con, "MCR_Tb")
+```
+
+#close DB conncetion
+
+```{r}
+ dbDisconnect(con)
+```
+
+# Next steps : 
+# Confirm the list of columns 
+# Clean multiple choice data 
+# Convert category data 
+# Select sub_dataset for example US Full_employeed 
+# Deal with missing data 
+# Objects : Determine which factors affecting the salary of US employee in Data Science field. 
+# Build ML model
+
+
+
+```{r pressure, echo=FALSE}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

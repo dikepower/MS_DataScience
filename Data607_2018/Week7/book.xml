@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<root>
+    <BOOK>
+        <author>AI Sweigart</author>
+        <title>Automate the Boring Stuff with Python: Practical Programming for Total Beginners</title>
+        <isbn-13>Ę978-1593275990</isbn-13>
+        <year>2015</year>
+        <price>25</price>
+    </BOOK>
+    <BOOK>
+        <author>Ngan F Huang and Nicolas L'Heureux  </author>
+        <title>Engineering Stem Cells for Tissue Regeneration</title>
+        <isbn-13>978-9813147744</isbn-13>
+        <year>2018</year>
+        <price>146</price>
+    </BOOK>
+    <BOOK>
+        <author>ĘZaretta L. Hammond</author>
+        <title>Culturally Responsive Teaching and The Brain: Promoting Authentic Engagement and Rigor Among Culturally and Linguistically Diverse Students</title>
+        <isbn-13>978-1483308012</isbn-13>
+        <year>2018</year>
+        <price>35</price>
+    </BOOK>
+</root>

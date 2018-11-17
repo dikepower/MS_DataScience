@@ -1,0 +1,74 @@
+---
+title: "Week7_1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+ 
+```{r cars}
+library("XML")
+library("rvest")
+library("knitr")
+library("jsonlite")
+library("RCurl")
+```
+
+
+#load html file 
+
+```{r}
+HTMLurl ="https://raw.githubusercontent.com/dikepower/607_DataAcquisition_And_Management/master/Week7/book.html"
+HTMLurldata <- getURL(HTMLurl)
+HTMLtable <- readHTMLTable(HTMLurldata, header = TRUE)
+HTMLtable
+
+```
+ #XML FILE 
+```{r}
+ 
+XML_url  <- "https://raw.githubusercontent.com/dikepower/607_DataAcquisition_And_Management/master/Week7/book.xml"
+XML <-getURL(XML_url)
+XML.data <- xmlParse(XML)
+XML.table <- xmlToDataFrame(XML.data)
+XML.table
+
+```
+
+ 
+#JSON FILE 
+
+
+```{r}
+jsonURL <- "https://raw.githubusercontent.com/dikepower/607_DataAcquisition_And_Management/master/Week7/book.json"
+JSON <- getURL(jsonURL)
+JSONurldata <- fromJSON(jsonURL)
+JSONurldata
+```
+#COMPARE HTML AND JSON
+```{r}
+identical(JSONurldata, HTMLtable)
+```
+#COMPARE HTML AND XML
+```{r}
+identical(XML.table, HTMLtable)
+```
+
+#COMPARE JSON AND XML
+```{r}
+identical(JSONurldata, XML.table)
+```
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

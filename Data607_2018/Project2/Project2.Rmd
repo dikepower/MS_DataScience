@@ -1,0 +1,291 @@
+---
+title: "Project2"
+author: "Michael"
+date: "October 7, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##description of dataset  
+The follow info are from kaggle 
+OSMI Mental Health in Tech Survey 2016
+Data on prevalence and attitudes towards mental health among tech workers
+Last Updated: 2 years ago (Version 1)
+About this Dataset
+OSMI Mental Health in Tech Survey 2016
+Currently over 1400 responses, the ongoing 2016 survey aims to measure attitudes towards mental health in the tech workplace, and examine the frequency of mental health disorders among tech workers.
+
+How Will This Data Be Used?
+We are interested in gauging how mental health is viewed within the tech/IT workplace, and the prevalence of certain mental health disorders within the tech industry. The Open Sourcing Mental Illness team of volunteers will use this data to drive our work in raising awareness and improving conditions for those with mental health disorders in the IT workplace.
+
+
+#load package
+```{r}
+require(dplyr)
+require(ggplot2)
+require(tidyr)
+```
+
+#load data 
+```{r cars}
+df1 <- read.csv("mental-heath-in-tech-2016_20161114.csv")
+```
+
+#Explore data
+```{r}
+head(df1)
+```
+
+```{r}
+dim(df1)
+```
+#choose variables 
+
+```{r}
+col_index <- c (1, 46:48, 51, 56:59)
+df1.subset <- df1[, col_index]
+
+```
+
+#rename columns 
+```{r}
+names(df1.subset)
+```
+
+
+```{r}
+df1.target <- rename (df1.subset, 
+                      Is_Employed ="Are.you.self.employed.",
+                      family_hx ="Do.you.have.a.family.history.of.mental.illness.",
+                      PMH ="Have.you.had.a.mental.health.disorder.in.the.past."   ,
+                      Current ="Do.you.currently.have.a.mental.health.disorder."    ,
+                      PMH_Pro ="Have.you.been.diagnosed.with.a.mental.health.condition.by.a.medical.professional.",
+                      
+                      age= "What.is.your.age." ,
+                      gender ="What.is.your.gender.",
+                      country= "What.country.do.you.live.in." ,
+                      state ="What.US.state.or.territory.do.you.live.in."   
+                      
+                      )
+
+
+names(df1.target)
+```
+
+
+#summary dataset
+```{r}
+summary(df1.target)
+```
+
+#clean up Gender variables 
+```{r}
+levels(df1.target$gender)
+```
+
+
+
+```{r}
+female_levels = levels(df1.target$gender)[grep('(fe).*|^f$|fm|woman|female', levels(df1.target$gender), ignore.case = T, perl = T)]
+male_levels   = levels(df1.target$gender)[grep('^m$|\bmale| male|mail|male |^male| man|\bman|^man$|masculine|dude|^male$', levels(df1.target$gender), ignore.case = T, perl = T)]
+
+```
+
+
+```{r}
+df1.target$gender_new = df1.target$gender
+df1.target$gender_new[df1.target$gender_new %in% female_levels] = 'female'
+df1.target$gender_new[df1.target$gender_new %in% male_levels] = 'male'
+df1.target$gender_new[!(df1.target$gender_new %in% c('male', 'female'))]  = NA 
+```
+
+
+
+```{r}
+summary(df1.target$gender_new %in% female_levels)
+summary(df1.target$gender_new %in% male_levels)
+summary(df1.target$gender_new %in% c(male_levels, female_levels)) 
+df1.target$gender_new = droplevels(df1.target$gender_new)
+table(df1.target$gender_new) 
+```
+
+#visulization 
+```{r}
+pl <- ggplot(df1.target, aes(gender_new))+ geom_bar( aes(color= gender_new , fill=gender_new))
+print (pl)
+
+
+
+```
+
+
+## Dataset2 
+
+
+#description dataset
+Context
+Datascription of the dataset 
+Columns - age: age of primary beneficiary
+
+sex: insurance contractor gender, female, male
+
+bmi: Body mass index, providing an understanding of body, weights that are relatively high or low relative to height, objective index of body weight (kg / m ^ 2) using the ratio of height to weight, ideally 18.5 to 24.9
+
+children: Number of children covered by health insurance / Number of dependents
+
+smoker: Smoking
+```{r}
+library(tidyverse)
+```
+
+```{r}
+df2 <- read.csv("insurance.csv")
+
+head(df2)
+```
+
+```{r}
+str(df2)
+```
+
+
+
+```{r}
+levels(df2$sex) <- c ("F", "M")
+```
+
+
+#creat Age group 
+
+```{r}
+df2 %>% 
+  select_if(is.numeric) %>% 
+  map_dbl(~max(.x))
+```
+
+#categorize the dataframe
+
+```{r}
+df2.target<-df2 %>% 
+  mutate(Agegroup=as.factor(findInterval(age,c(18,35,50,80))))
+
+
+
+levels(df2.target$Agegroup)<-c("Youth","Mid Aged","Old")
+levels(df2.target$smoker)<-c("N","Y")
+levels(df2.target$region)<-c("NE","NW","SE","SW")
+```
+
+```{r}
+#Visualise distribution of charges by agegroup,sex and region
+df2.target%>% 
+   ggplot(aes(region,charges,fill=sex))+geom_boxplot()+facet_grid(~Agegroup)+
+   ggtitle("Insurance Charge distribution by Age, Sex and region")
+```
+
+ ## Dataset3
+   
+The movieLens dataset is most often used for the purpose of recommender systems which aim to predict user movie ratings based on other users' ratings. It needs to do a lot data clean before the do analysis  . 
+    
+ 
+```{r}
+library(tidyverse)
+```
+ 
+ #load data 
+```{r}
+movies <- read_csv("movies.csv")
+```
+
+```{r}
+tail(movies)
+
+```
+
+#Tidy Up Movie Title
+ 
+```{r}
+library(stringr)
+replace_patter <- "[(]\\d{4}[)]"
+movies$movie_title_New  <-  gsub ( replace_patter, "", movies$title)
+
+movies
+```
+
+```{r}
+#clean up genres
+str (movies$genres)
+```
+#What were the most popular movie genres year by year?
+#We know how many movies were produced, but can we check what genres were popular?  
+
+```{r}
+genres_df <- movies %>%
+  separate_rows(genres, sep = "\\|")  
+```
+
+```{r}
+pl <-  ggplot(genres_df , aes(genres)) +geom_bar()+ theme(axis.text.x=element_text(angle = 90,vjust = 0))
+print (pl)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

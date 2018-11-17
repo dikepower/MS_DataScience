@@ -1,0 +1,75 @@
+---
+title: "Project3"
+author: "GuangQiu"
+date: "October 1, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r }
+install.packages("RSQLite")
+```
+
+#load library 
+```{r}
+library(RSQLite)
+```
+
+#
+```{r}
+# Create an ephemeral in-memory RSQLite database
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+
+dbListTables(con)
+```
+#load data from csv files 
+```{r}
+df <-  read.csv(file = "kaggle-survey-2017/multipleChoiceResponses.csv", header= TRUE)
+
+
+
+```
+#load extra data 
+```{r}
+df1 <- read.csv (file = "kaggle-survey-2017/freeformResponses.csv", header= TRUE)
+df2 <- read.csv (file = "kaggle-survey-2017/conversionRates.csv", header= TRUE)
+
+```
+
+```{r}
+#head(df)
+```
+```{r}
+head(df2)
+```
+
+
+
+
+
+#load data into SQLlite
+
+```{r}
+dbWriteTable(con, df, "Response")
+dbWriteTable(con, df1, "Response")
+dbWriteTable(con, df2, "Response")
+dbListTables(con)
+
+```
+
+
+
+
+
+
+
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

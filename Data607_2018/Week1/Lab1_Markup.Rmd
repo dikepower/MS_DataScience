@@ -1,0 +1,97 @@
+---
+title: "Data607 Week1 Assignment"
+author: "GuangQiu"
+date: "August 29, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load data to local dataframe
+
+
+```{r}
+file <-  "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
+# reference https://github.com/dikepower/607_DataAcquisition_And_Management/blob/master/Week1/agaricus-lepiota.data.csv
+
+Mushroom_df<- read.csv(file,header=FALSE)
+```
+
+## Add column names to the dataset based on the description of the data
+ 
+
+```{r}
+names(Mushroom_df) <-  c("EdiblePoisonous", "CapShape", "CapSurface", "CapColor",  "Bruises?", "Odor",  "gill-attachment",  "gill-spacing","gill-size","gill-color",  "stalk-shape","stalk-root","stalk-surface-above-ring",  "stalk-surface-below-ring",  "stalk-color-above-ring","stalk-color-below-ring", "veil-type",  "veil-color", "ring-number","ring-type", "spore-print-color","population", "habitat")
+```
+
+## Check the first 6 rows of the dataframe
+```{r}
+head(Mushroom_df)
+```
+##Create subdata by selecting columns
+
+```{r}
+library(dplyr)
+subdata <- select (Mushroom_df, "EdiblePoisonous", "CapShape", "CapSurface", "CapColor", "Odor")
+```
+##Transformation data in the subdata
+```{r}
+#Transformation Data
+
+levels(subdata$`EdiblePoisonous`) <- c(levels(subdata$`EdiblePoisonous`), c("Edible","Poisonous"))
+subdata$`EdiblePoisonous`[subdata$`EdiblePoisonous` == "e"] <- "Edible"
+subdata$`EdiblePoisonous`[subdata$`EdiblePoisonous` == "p"] <- "Poisonous"
+
+# 2..CapShape
+
+#CapShape
+levels(subdata$`CapShape`) <- c(levels(subdata$`CapShape`), c("Bell","Conical","Convex","Flat","Knobbed","Sunken"))
+subdata$`CapShape`[subdata$`CapShape` == "b"] <- "Bell"
+subdata$`CapShape`[subdata$`CapShape` == "c"] <- "Conical"
+subdata$`CapShape`[subdata$`CapShape` == "x"] <- "Convex"
+subdata$`CapShape`[subdata$`CapShape` == "f"] <- "Flat"
+subdata$`CapShape`[subdata$`CapShape` == "k"] <- "Knobbed"
+subdata$`CapShape`[subdata$`CapShape` == "s"] <- "Sunken"
+
+#3..CapSurface
+
+levels(subdata$`CapSurface`) <- c(levels(subdata$`CapSurface`), c("Fibrous", "Grooves", "Scaly", "Smooth"))
+subdata$`CapSurface`[subdata$`CapSurface` == "f"] <- "Fibrous"
+subdata$`CapSurface`[subdata$`CapSurface` == "g"] <- "Grooves"
+subdata$`CapSurface`[subdata$`CapSurface` == "y"] <- "Scaly"
+subdata$`CapSurface`[subdata$`CapSurface` == "s"] <- "Smooth"
+# 4..Odor
+levels(subdata$Odor) <- c(levels(subdata$Odor), c("Almond", "Anise", "Creosote", "Fishy", "Foul", "Musty", "None", "Pungent", "Spicy"))
+subdata$Odor[subdata$Odor == "a"] <- "Almond"
+subdata$Odor[subdata$Odor == "l"] <- "Anise"
+subdata$Odor[subdata$Odor == "c"] <- "Creosote"
+subdata$Odor[subdata$Odor == "y"] <- "Fishy"
+subdata$Odor[subdata$Odor == "f"] <- "Foul"
+subdata$Odor[subdata$Odor == "m"] <- "Musty"
+subdata$Odor[subdata$Odor == "n"] <- "None"
+subdata$Odor[subdata$Odor == "p"] <- "Pungent"
+subdata$Odor[subdata$Odor == "s"] <- "Spicy"
+
+# 5..CapColor
+levels(subdata$`CapColor`) <- c(levels(subdata$`CapColor`), c("Brown", "Buff", "Cinnamon", "Gray", "Green", "Pink", "Purple", "Red", "White", "Yellow"))
+subdata$`CapColor`[subdata$`CapColor` == "n"] <- "Brown"
+subdata$`CapColor`[subdata$`CapColor` == "b"] <- "Buff"
+subdata$`CapColor`[subdata$`CapColor` == "c"] <- "Cinnamon"
+subdata$`CapColor`[subdata$`CapColor` == "g"] <- "Gray"
+subdata$`CapColor`[subdata$`CapColor` == "r"] <- "Green"
+subdata$`CapColor`[subdata$`CapColor` == "p"] <- "Pink"
+subdata$`CapColor`[subdata$`CapColor` == "u"] <- "Purple"
+subdata$`CapColor`[subdata$`CapColor` == "e"] <- "Red"
+subdata$`CapColor`[subdata$`CapColor` == "w"] <- "White"
+subdata$`CapColor`[subdata$`CapColor` == "y"] <- "Yellow"
+```
+##Check the data in subdata dataset
+
+
+```{r}
+head(subdata)
+```
+
+

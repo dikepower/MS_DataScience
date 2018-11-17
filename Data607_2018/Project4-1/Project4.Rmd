@@ -1,0 +1,354 @@
+---
+title: "Project4"
+output: html_document
+---
+
+## Summary of the work
+###  work flow 
+1. Load data
+2. Clean dataset
+3. Prepare train and test dataset
+4. Visulalization with worldcloud
+5. Limited to data dimenstion (freq>100)
+6. Using Navie Bayes model to train model
+7. Test /evaluate model 
+
+### Based on the results  , the postive rate of the model is 76.1% , false postive rate is  24%. 
+### Extra work need to do adjust the parameter to make the model more accurate . 
+ 
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### load in the libraries needed
+ 
+```{r }
+#install.packages("tidytext")
+library(stringr)
+library(tidytext)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(wordcloud)
+library(kernlab)
+ 
+```
+
+
+
+# get a list of the files in the input directory
+```{r}
+if (!dir.exists("ham")){
+  download.file(url = "http://spamassassin.apache.org/old/publiccorpus/20021010_easy_ham.tar.bz2", destfile = "20021010_easy_ham.tar.bz2")
+  untar("20021010_easy_ham.tar.bz2",compressed = "bzip2")
+}
+ham.docs = list.files(path = "easy_ham",full.names = TRUE)
+
+if (!dir.exists("spam")){
+  download.file(url = "http://spamassassin.apache.org/old/publiccorpus/20050311_spam_2.tar.bz2", destfile = "20050311_spam_2.tar.bz2")
+  untar("20050311_spam_2.tar.bz2", compressed = "bzip2")
+}
+spam.docs= list.files(path = "spam_2", full.names = TRUE)
+```
+
+### set up path for each directory 
+```{r}
+ham.path <- "easy_ham"
+spam.path <- "spam_2"
+ 
+```
+#get the list of file names from paths 
+
+```{r}
+spam.docs <- dir(spam.path)
+ham.docs<-dir(ham.path)
+```
+
+#### sample data from spam docs
+```{r}
+spam.docs [1:4]
+```
+
+#### sample data from ham docs
+```{r}
+ham.docs [1:4]
+```
+
+
+#count number of documents in each directory
+```{r}
+spamdoc.length <- length(spam.docs)
+print (spamdoc.length)
+hamdoc.length <- length(ham.docs)
+print (hamdoc.length)
+```
+
+
+
+#build function to extract the content of each email 
+
+```{r}
+getContent<-function(path){
+  conn<-file(path,open = "rt") 
+  line<-readLines(conn,warn = F)
+  content<- tryCatch(line[seq(which(line == "")[1]+1, length(line), 1)], error = function(e) e)
+  close(conn)
+  content<-paste(content,collapse = '\n')
+  return(content)
+}
+```
+ 
+
+#### apply function to both files and combine dataset 
+```{r}
+spamContent<-sapply(spam.docs,function(path) getContent(file.path(spam.path,path)))
+hamContent<-sapply(ham.docs,function(path) getContent(file.path(ham.path,path)))
+email.content<-c(spamContent,hamContent)
+ 
+```
+
+#count number of documents in each directory
+```{r}
+spamdoc.length <- length(spamContent)
+print (paste0("#spam doc: ", spamdoc.length))
+hamdoc.length <- length(hamContent)
+print (paste0("#ham doc: ", hamdoc.length))
+
+email.length <- length(email.content)
+print (paste0("#Total email: ",  email.length))
+```
+
+
+## clean up dataset
+#### show data
+```{r}
+head(email.content, 1)
+```
+
+#### load libraries 
+```{r}
+
+library(NLP)
+library(tm)
+library(SnowballC)#提取词干
+library(slam)
+
+```
+
+
+#### build functions to clean data
+
+```{r}
+
+#remove no  remove all non-alphanumeric characters 
+remove.NoAlphanumeric<- function(x) { x <- gsub("[^[:alnum:]///' ]", " ", x)}
+
+#change url to http 
+removeURL<-function(x){
+  x<-gsub(pattern = "(https?|ftp|file):\\/\\/[-A-Za-z0-9+&@#\\/%?=~_|!:,\\.;]+[-A-Za-z0-9+&@#\\/%=~_|]"," http ",x)
+}
+
+# remove html format 
+removeHTML<-function(x){
+  x<-gsub(pattern = "<[^>]+>"," ",x)
+}
+
+# remove stop words
+
+customer.stopwords<-function(){
+  c(stopwords(),"will","also", "is")
+}
+
+
+cleanContent1<-function(content){
+  content <-  remove.NoAlphanumeric (content)
+  contentCorpus<-Corpus(VectorSource(content))
+  contentCorpus<-tm_map(contentCorpus,PlainTextDocument)
+  contentCorpus <- tm_map(contentCorpus, removeURL)
+ contentCorpus <- tm_map(contentCorpus, removeHTML)
+  contentCorpus <- tm_map(contentCorpus, tolower)
+  contentCorpus <- tm_map(contentCorpus, removeNumbers)
+ contentCorpus<-tm_map(contentCorpus,removeWords,customer.stopwords())
+  contentCorpus <- tm_map(contentCorpus, removePunctuation)
+  contentCorpus <- tm_map(contentCorpus, stripWhitespace)
+  return(contentCorpus)
+}
+
+
+```
+
+
+
+#### apply function to the dataset
+
+```{r}
+ 
+email.corpus<-cleanContent1(email.content)
+
+```
+
+```{r}
+inspect(email.corpus[1:2])
+```
+
+
+## Building a Model
+### Train Test Split
+[1] "#spam doc: 1397"
+[1] "#ham doc: 2551"
+[1] "#Total email: 3948
+
+
+
+
+```{r}
+
+email.dtm<-DocumentTermMatrix(email.corpus)
+email.dtm
+
+#total 51587 col , 3948  docs , the first 1397 are spams the rest (2551) are ham . 
+```
+
+```{r}
+train.spam.number  <- round(spamdoc.length*0.7)
+train.spam.number 
+train.ham.number <- round(1398+hamdoc.length*0.7)
+train.ham.number
+```
+
+
+
+```{r}
+trainlist <- c(1:train.spam.number,spamdoc.length:train.ham.number)
+email.corpus.train<- email.corpus[trainlist]
+length(email.corpus.train)
+#test set index for test dataset 
+testlist <-c(train.spam.number:spamdoc.length,train.ham.number:email.length)
+
+email.corpus.test<-email.corpus [testlist] 
+length(email.corpus.test)
+```
+
+
+
+
+```{r}
+#分离DTM
+email.dtm.train<-email.dtm[trainlist,]
+length(email.corpus.train)
+eamil.dtm.test<-email.dtm[testlist,]
+length(email.corpus.test)
+
+```
+
+
+
+
+# visualization of train dataset 
+
+```{r}
+ 
+email.dtm.train<-email.dtm[trainlist,]
+length(email.corpus.train)
+eamil.dtm.test<-email.dtm[testlist,]
+length(email.corpus.test)
+
+```
+
+
+```{r}
+#count the freqency of words
+s.dtm.train<-as.matrix(email.dtm.train[1:train.spam.number ,])
+s.sum<-col_sums(s.dtm.train)
+s.term<-names(s.sum)
+s.freq<-as.numeric(s.sum)
+#Conver to matrix 
+s.frame<-as.data.frame(cbind(s.term,s.freq),row.names=NULL,optional=F)
+s.frame$s.freq<-as.numeric(s.frame$s.freq)
+ 
+```
+
+```{r}
+head(s.frame)
+```
+ 
+
+```{r}
+#install.packages("wordcloud2")
+library(wordcloud2)
+wordcloud2(s.frame)
+```
+
+
+## Reduce dimension of whole dataset (only choose words with the freq >=100)
+
+```{r}
+myfindFreqTerms <- function(x,lowfreq=0,highfreq=Inf){
+  stopifnot(inherits(x,c("DocumentTermMatrix","TermDocumentMatrix","simple_triplet_matrix")),
+            is.numeric(lowfreq),is.numeric(highfreq))
+  if(inherits(x,"DocumentTermMatrix"))
+    x<-t(x)
+  rs <- slam::row_sums(x)
+  y <- which(rs >= lowfreq & rs<= highfreq)
+  return(x[y,])
+}
+email.dict<-Terms(myfindFreqTerms(email.dtm.train,100))
+length(email.dict)
+
+```
+
+
+
+```{r}
+email.train<-DocumentTermMatrix(email.corpus.train,list(dictionary=email.dict))
+email.train
+```
+
+
+```{r}
+email.test<-DocumentTermMatrix(email.corpus.test,list(dictionary=email.dict))
+email.test
+```
+
+## training Model 
+
+```{r}
+
+convert_counts <- function(x){
+  x <- ifelse(x>0,1,0)
+  x <- factor(x, levels=c(0,1),labels=c("No","Yes"))
+  return(x)
+}
+email_train <- apply(email.train, MARGIN=2, convert_counts)
+email_test<-apply(email.test, MARGIN = 2, convert_counts) 
+
+
+
+```
+
+```{r}
+#install.packages("e1071")
+library(e1071)
+s_h_train_type<-c(rep("spam",train.spam.number),rep("ham",1+train.ham.number-spamdoc.length ))
+s_h_test_type<-c(rep("spam",1+spamdoc.length-train.spam.number),rep("ham",1+email.length-train.ham.number))
+
+s_h_train_type<-as.data.frame(s_h_train_type)
+ 
+model_s_h<-naiveBayes(email_train,s_h_train_type$s_h_train_type,laplace=1)
+email.prediction<-predict(model_s_h,email_test,type = "class")
+ 
+```
+
+
+## Test Model
+```{r}
+#install.packages("gmodels")
+library(gmodels)
+CrossTable(email.prediction,s_h_test_type,prop.chisq=TRUE,prop.t=FALSE,dnn=c("predicted","actual"))
+
+
+```
+
+ 

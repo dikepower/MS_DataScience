@@ -1,0 +1,204 @@
+---
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+#import package
+```{r}
+library(stringr)
+
+```
+
+
+#Load data
+```{r cars}
+raw.data <-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"
+```
+
+#Extract phones and names 
+
+```{r}
+phone <- "[(]*[0-9]{3}[- .)]*[0-9]*[- .]*[0-9]{4}"
+phone_number <- str_extract_all(raw.data, phone, simplify = TRUE)
+phone_number
+
+```
+
+
+```{r}
+names = unlist(str_extract_all(raw.data, "[[:alpha:].,  ]{2,}"))
+print(names)
+print(paste0 ("Vector: ", is.vector(names)))
+```
+
+
+
+
+#extract last name , first name and title 
+
+```{r}
+
+fullName.list <-str_extract_all(raw.data, "[[:alpha:].,  ]{2,}", simplify = TRUE)
+fullName.list
+  
+  #"^[[:alpha:]]{2,}+\\[.]"
+#print (str_extract_all(names, title.pattern, simplify = TRUE))
+ 
+```
+
+
+```{r}
+#creat empty Datafram 
+df <- data.frame(Title =character(),
+                 First_Name=character(),
+                 Last_Name=character(), 
+                 stringsAsFactors=FALSE) 
+```
+
+
+#extract title , FristName , LastName
+```{r}
+#remove titles first 
+j=1
+for (i in fullName.list)
+{
+   
+  title = str_extract(i, "^[[:alpha:]]{2,}[.]")
+  name2  =str_replace_all(i, "^[[:alpha:]]{2,}[.]", '') 
+  
+   if (grepl(",", name2)){
+     name3 <- str_split(name2, ",", simplify = TRUE)
+     newRow <- data.frame(Title =title, First_Name = name3[2],Last_Name=name3[1] )
+     df <- rbind(df, newRow)
+   
+     #print (name3)
+   }
+  else{
+    name3 = str_extract_all(name2, "[[:alpha:]]+[^[.]]", simplify = TRUE) 
+    newRow <- data.frame(Title =title, First_Name = name3[1], Last_Name=name3[2])
+    df <- rbind(df, newRow)
+  }
+  
+  j <- j+1
+}
+
+```
+
+
+#3-1 oragniaze all elments to standard first_name, lastname  
+```{r}
+
+df[,2:3]
+ 
+```
+
+#3-2 Construct a logical vector indicating whether a character has a title
+
+
+```{r}
+vector.withTitle <- str_detect(names, "^[[:alpha:]]{2,}[.]")
+vector.withTitle
+```
+
+# checck from dataframe
+
+```{r}
+df$No_title <- is.na(df$Title)
+df
+```
+
+
+#Contruct a logical vector that indicates if a character has a second name
+```{r}
+secondname <- str_detect(names," [A-z]{1}\\. ")
+secondname
+```
+
+```{r}
+df$No_title <- is.na(df$Title)
+df$SecondName <- grepl("[.]", df$First_Name)
+df
+```
+ 
+
+#4.Describe the Types of Strings that conform to the following regular expressions and contruct an example that is matched by the regular expression
+# [0-9]+\\$
+
+
+```{r}
+# any character end with number+$ 
+p1 <-   "[0-9]+\\$"
+sampletext <- c("5555", "ssdf33$" ,"334a" ,"333$")
+str_detect( sampletext, p1)
+
+
+
+```
+
+#\\b[a-z]{1,4}\\b
+```{r}
+# #Any word that has anywhere between 1 to 4 letters end with word boundary
+p1 <-   "\\b[a-z]{1,4}\\b"
+sampletext <- c(" New york city", "cats dogs" ,"cats" ,"333$")
+str_detect( sampletext, p1)
+
+```
+
+# .*?\\.txt$
+```{r}
+# A string that ends with a .txt and then new line or end line
+p1 <-   ".*?\\.txt$"
+sampletext <- c(" New york city.txt", "newbook.txt" ,"movie.txt" ,"movie.xlx")
+str_detect( sampletext, p1)
+
+```
+ 
+
+
+#\\d{2}/\\d{2}/\\d{4}
+
+```{r}
+# #Numbers that are written in format nn/nn/nnnn
+p1 <- "\\d{2}/\\d{2}/\\d{4}"
+sampletext <- c("20/12/2018", "05-05-2016" ,"06/12/2012" )
+str_detect( sampletext, p1)
+
+```
+#<(.+?)>.+?</\\1>
+```{r}
+# chose string from html format  <target> text </+target) 
+p1 <- "(.+?)>.+?</\\1>"
+sampletext <- c("<test>hello</test>", "<text>hello<text>")
+str_detect( sampletext, p1)
+
+```
+
+#9. Extra Credit-The following code hides a secret message. Crack it with R and regular expressions.
+
+
+
+```{r}
+secret_code <-"clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0TanwoUwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigOd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5fy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr"
+```
+
+#extract upper case letter
+```{r}
+uppercaseletters <- str_extract_all(secret_code, "[[:upper:].]{1,}",simplify = TRUE)
+uppercaseletters 
+
+
+```
+
+#join list and replece ". " with " "
+
+```{r}
+str_replace_all(paste(uppercaseletters, collapse = ''), "[.]", " ")
+```
+
+
+ 

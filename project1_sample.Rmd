@@ -1,0 +1,92 @@
+---
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(stringr)
+
+chess_fields <- c("Number", "Name", "Points", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "EOL")
+tournament <- read.table("./tournamentinfo.txt", header = FALSE, skip = 4, sep = "|", fill = TRUE, stringsAsFactors = FALSE, col.names = chess_fields)
+```
+
+## Including Plots
+
+
+```{r}
+tournament <- subset(tournament, !Name == "", select = c(Number:R7))
+head(tournament)
+```
+
+```{r}
+library(stringr)
+for (i in 1:length(tournament)) {
+  tournament[, i] <- str_trim(tournament[, i])
+}
+```
+
+
+
+```{r}
+head(tournament)
+```
+
+
+
+```{r}
+for (i in 1:nrow(tournament)) {
+  tournament$State[i] <- tournament$Number[i + 1]
+  tournament$Player[i] <- str_trim(str_extract(tournament$Name[i + 1], "[[:blank:]]{1}[[:digit:]]{3,4}"))
+}
+tournament <- subset(tournament, !is.na(Player))
+```
+
+
+```{r}
+head(tournament)
+```
+
+
+```{r}
+for (i in 4:10) {
+  tournament[, i] <- str_trim(str_extract(tournament[, i], "[[:space:]]+[[:digit:]]{1,2}"))
+}
+```
+
+```{r}
+head(tournament,)
+```
+
+
+
+
+
+```{r}
+for (i in 1:nrow(tournament)) {
+  for(j in 4:10) {
+    tournament[i,j] <- tournament[tournament$Number == tournament[i,j],12][1]
+    # [1] at end avoids error from NAs
+  }
+}
+```
+
+
+```{r}
+head(tournament)
+```
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

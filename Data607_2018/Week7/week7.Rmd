@@ -1,0 +1,59 @@
+---
+title: "week7"
+author: "Michael"
+date: "October 8, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Overview
+Parse XML
+Parse HTML
+Parse JSON
+Looks at Structure of Data.Frames
+Conclusions
+
+
+```{r}
+library(XML)
+library("rvest")
+library("knitr")
+library("jsonlite")
+library("RCurl")
+#install.packages("htmltab")
+#library("htmltab")
+```
+
+Overview
+The purpose of this assignment is to explore the difference between JSON, XML and HTML files. Create a file of each type to store information on 3 books. Then parse the files into a data frame. Are all three data frames the same?
+
+Parse XML 
+ 
+ 
+ 
+```{r}
+url <- "book.html"
+html_df <-  readHTMLTable(url , header = TRUE)
+html_df 
+```
+ 
+ 
+ 
+```{r}
+html_df 
+```
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

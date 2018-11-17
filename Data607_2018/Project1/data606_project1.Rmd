@@ -1,0 +1,196 @@
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
+library(readr)
+```
+ :
+
+```{r }
+fileName<-"tournamentinfo.txt"
+sourcefile <- read_lines(fileName)
+```
+
+#show sample source file 
+
+```{r}
+sourcefile[1:14]
+```
+
+ 
+
+```{r}
+#load data into one dataframe and separate data by lines
+df =  data.frame(c())
+newfilelist = NULL
+newfilelist2= NULL
+df = NULL
+for (i in seq(5, length(sourcefile), by=3))
+  
+{
+  newfilelist <- append(newfilelist, sourcefile[i])
+  newfilelist2 <- append(newfilelist2, sourcefile[i+1])
+  newRow <-  data.frame(paste0(newfilelist, newfilelist2))
+#  print (newRow)
+
+  
+}
+
+df <- rbind(df, newRow)
+```
+
+
+```{r}
+ 
+colnames(df ) <- c('all_col')
+head(df)
+```
+
+#Separe the comumn into multiple columns 
+```{r}
+ headers  <- c("Pair","Player Name","Total","Round 1","Round 2","Round 3", "Round 4","Round 5","Round 6","Round 7","State","USCF","Pts","1","2","3","4","5","6","7","Ave_Rating")
+
+ 
+```
+
+#load tidyr package and separate cols with "|"
+
+```{r}
+library(tidyr)
+library(dplyr)
+target_df <- separate(data = df,col = all_col ,into = headers ,sep='\\|' )
+head(target_df)
+```
+
+
+
+```{r}
+target_df <- target_df%>% separate( 'USCF', into = paste("V", 1:5), sep = '[[:punct:]->]')  
+
+```
+
+
+
+```{r}
+ #delete column v2, v4
+target_df <- select (target_df, -c('V 2','V 4'))
+#rename v1 --> USCF ID  v3 -->Pre Rating v5-->Post Rating
+target_df <- target_df %>% rename('USCF_ID'= 'V 1') %>% rename('Pre_Rating'= 'V 3') %>%rename('Post_Rating'= 'V 5')
+head(target_df)
+```
+#Calculating Average Pre Rating
+ 
+
+
+```{r}
+df_score<-target_df 
+df_score$opp1<-  as.numeric(str_extract (df_score$`Round 1`,"[[:digit:]]{1,}"))
+df_score$opp2<-  as.numeric(str_extract (df_score$`Round 2`,"[[:digit:]]{1,}"))
+
+df_score$opp3 <-  as.numeric(str_extract (df_score$`Round 3`,"[[:digit:]]{1,}"))
+df_score$opp4  <-  as.numeric(str_extract (df_score$`Round 4`,"[[:digit:]]{1,}"))
+df_score$opp5  <-  as.numeric(str_extract (df_score$`Round 5`,"[[:digit:]]{1,}"))
+df_score$opp6  <-  as.numeric(str_extract (df_score$`Round 6`,"[[:digit:]]{1,}"))
+df_score$opp7  <-  as.numeric(str_extract (df_score$`Round 7`,"[[:digit:]]{1,}"))
+```
+
+
+
+
+```{r}
+head(df_score)
+```
+
+#prepare opponets dataframe
+```{r}
+#get opponents dataframe 
+opponents <- select(df_score, Pair,'Player Name',Total, starts_with("opp"))
+#cal total N of games per player
+opponents$total_N_Games <- apply(opponents, 1, function(x) 7-sum(is.na(x)))  
+opponents$Pair <- as.numeric(str_extract (df_score$Pair ,"[[:digit:]]{1,}")) 
+#fill in NA with 0
+opponents[is.na(opponents)] <- 0
+
+  
+```
+
+#prepare player dataframe 
+
+```{r}
+player <- select (target_df, Pair,'Player Name',State, 'USCF_ID', Total, 'Pre_Rating', 'Post_Rating' , 'Ave_Rating')
+#pase numberic value from both Pre_Rating and Post_Rating 
+player$Pre_Rating<-  as.numeric(str_extract (player$Pre_Rating,"[[:digit:]]{1,}"))
+player$Post_Rating<-  as.numeric(str_extract (player$Post_Rating,"[[:digit:]]{1,}"))
+player$Pair <-  as.numeric(str_extract(player$Pair,"[[:digit:]]{1,}"))
+player$Ave_Rating <- 0
+```
+
+
+
+#  calculate Average Pre-Rating for each player
+```{r}
+
+for (k in 4:10)
+  {
+  for (j in 1:dim(player)[1])
+    {
+    for (i in 1:dim(player)[1]){
+    
+      if (as.numeric(opponents[j,k]) == as.numeric(player$Pair[i])){
+          # print (player$Pair[i])
+         player$Ave_Rating[j] <- as.numeric(player$Ave_Rating[j]) + as.numeric(player$Pre_Rating[i])
+        # print (player$Ave_Rating[j])
+      }
+    }
+  }
+
+}
+```
+
+
+```{r}
+head(opponents)
+```
+
+
+
+```{r}
+head(player)
+```
+
+
+#merge two dataframes and calculate total Average rating 
+
+```{r}
+df_summary <- merge(x= player, y = opponents, by ='Pair' , all.x = TRUE)
+df_summary <- select(df_summary, -c('Total.y' ,'Player Name.y') )
+df_summary$Ave_Rating <- df_summary$Ave_Rating/df_summary$total_N_Games 
+
+head(df_summary)
+```
+
+#show distribution of players by state
+
+```{r}
+library(ggplot2)
+
+
+```
+
+```{r}
+pl <- ggplot(df_summary, aes(x=State))
+print(pl+geom_bar(aes(fill=State)))
+```
+
+
+
+#load final data into csv file 
+
+
+```{r}
+write.table(df_summary, file = "tournamentInfo.csv",row.names=FALSE, na="",col.names=TRUE, sep=",")
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
